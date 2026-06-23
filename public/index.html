@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Persona</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:wght@400;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="torn1" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.02" numOctaves="4" seed="3" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="26"/>
+    </filter>
+    <filter id="torn2" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.016 0.024" numOctaves="4" seed="11" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="20"/>
+    </filter>
+    <filter id="torn3" x="-12%" y="-12%" width="124%" height="124%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.05 0.06" numOctaves="3" seed="7" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="7"/>
+    </filter>
+  </defs>
+</svg>
+<div id="app">
+
+  <div id="topbar" class="paper">
+    <div class="brand">
+      <img src="logo.png" class="brand-logo" alt="PERSONA">
+      <span class="wordmark">PERSONA</span>
+      <span class="tagline">a mind owned by its holders</span>
+      <nav id="tabs">
+        <button class="tab active" data-view="map">MAP</button>
+        <button class="tab" data-view="graph">GRAPH</button>
+        <button class="tab" data-view="inf">INFLUENCERS</button>
+        <button class="tab" id="voiceBtn">VOICE</button>
+      </nav>
+    </div>
+    <div class="topstats">
+      <div class="stat"><span id="statSeats">0/50</span> seats taken</div>
+      <div class="stat"><span id="statSupply">0</span> weight in brain</div>
+      <button id="connectBtn" class="btn-accent">CONNECT WALLET</button>
+    </div>
+  </div>
+
+  <div id="main">
+
+    <aside id="leftPanel" class="panel paper t2">
+      <div class="panel-title">BRAIN COMPOSITION</div>
+      <div id="brainList" class="scroll"></div>
+      <div class="panel-title mt"><img src="svg/X-dark.svg" class="brand-icon" alt="X"> DIARY</div>
+      <div id="tweetsFeed" class="scroll"></div>
+      <div class="panel-title mt">TONE MIX</div>
+      <div id="toneList"></div>
+    </aside>
+
+    <section id="mapWrap" class="paper">
+      <svg id="map"></svg>
+      <div id="tooltip" class="hidden"></div>
+      <svg id="graphView" class="hidden"></svg>
+      <div id="infView" class="hidden">
+        <table>
+          <thead>
+            <tr><th>#</th><th>INFLUENCER</th><th>CATEGORY</th><th>SCORE</th><th>FOLLOWERS</th><th>POSTS</th><th>AGE</th><th>BRAIN %</th><th>MINDS</th></tr>
+          </thead>
+          <tbody id="infRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <aside id="rightPanel" class="panel paper">
+      <div class="panel-title">PERSONA IS THINKING<span class="blink">_</span></div>
+      <div id="feed" class="scroll"></div>
+      <div id="thinking"><span class="th-dot"></span><span id="thinkingText">warming up the minds</span><span class="th-dots"></span></div>
+    </aside>
+
+  </div>
+</div>
+
+<div id="voiceModal" class="hidden">
+  <div id="voiceCard">
+    <div class="modal-head">
+      <span>CURRENT VOICE</span>
+      <button id="voiceClose">×</button>
+    </div>
+    <div class="modal-sub">how the mind talks right now · updated <span id="voiceUpdated">—</span></div>
+    <div id="voiceDominant"></div>
+    <p id="voiceSummary"></p>
+    <div class="modal-label">tone usage</div>
+    <div id="voiceTones"></div>
+  </div>
+</div>
+
+<div id="holderModal" class="hidden">
+  <div id="holderCard">
+    <div class="modal-head">
+      <span>MIND #<span id="hmRank"></span></span>
+      <button id="hmClose">×</button>
+    </div>
+    <div class="hm-row hm-avatar-row">
+      <img id="hmAvatar" src="" alt="">
+      <div>
+        <div id="hmInfName" class="hm-big"></div>
+        <a id="hmInfLink" href="#" target="_blank" rel="noopener"><img src="svg/X-dark.svg" class="brand-icon" alt="X">@<span id="hmInfHandle"></span></a>
+        <div id="hmFoll" class="hm-foll"></div>
+      </div>
+    </div>
+    <div class="hm-row"><span class="hm-label">minted by</span>
+      <a id="hmWalletLink" href="#" target="_blank" rel="noopener" class="hm-wallet">
+        <span id="hmWallet"></span><img src="svg/solscan-logo-light.svg" class="brand-icon" alt="Solscan">
+      </a>
+    </div>
+    <div class="hm-row"><span class="hm-label">holding</span><span class="hm-big" id="hmBalance"></span> <span class="hm-token">PERSONA</span></div>
+    <div class="hm-row"><span class="hm-label">brain share</span><span class="hm-big" id="hmShare"></span></div>
+    <div class="hm-row"><span class="hm-label">tone vote</span><span id="hmTone" class="hm-tone"></span></div>
+    <div class="hm-row"><span class="hm-label">staked</span><span id="hmStaked"></span> <span id="hmSim" class="badge hidden">SIM</span></div>
+  </div>
+</div>
+
+<div id="modal" class="hidden">
+  <div id="modalCard">
+    <div class="modal-head">
+      <span>STAKE YOUR MIND</span>
+      <button id="modalClose">×</button>
+    </div>
+    <div class="modal-sub">wallet <span id="modalWallet"></span> · balance <span id="modalBalance"></span> PERSONA</div>
+    <div class="modal-label">1. pick the influencer your share of the brain absorbs</div>
+    <input id="infSearch" type="text" placeholder="search 100 influencers..." autocomplete="off">
+    <div id="infGrid" class="scroll"></div>
+    <div class="modal-label">2. pick the tone you vote for</div>
+    <div id="toneGrid"></div>
+    <button id="stakeBtn" class="btn-accent wide" disabled>SIGN & STAKE</button>
+    <div id="modalMsg"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
