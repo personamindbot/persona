@@ -98,7 +98,7 @@ function renderBrain() {
       </div>
       <div class="brain-pct">${b.pct.toFixed(1)}%</div>
     </a>
-  `).join('') || '<div class="brain-handle">brain is empty. stake your mind.</div>';
+  `).join('') || '<div class="brain-handle">brain is empty. claim a seat.</div>';
 }
 
 // Аудио-дорожка: псевдослучайные (детерминированные) палки, закрашенные до pct
@@ -552,11 +552,11 @@ async function stake() {
   msg.classList.remove('err');
   try {
     msg.textContent = 'sign the message in Phantom...';
-    const message = `PERSONA stake: ${myWallet} at ${Date.now()}`;
+    const message = `PERSONA claim: ${myWallet} at ${Date.now()}`;
     const encoded = new TextEncoder().encode(message);
     const signed = await window.solana.signMessage(encoded, 'utf8');
     const signature = b58encode(signed.signature);
-    msg.textContent = 'staking...';
+    msg.textContent = 'claiming your seat...';
     const r = await fetch('/api/holder', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -569,7 +569,7 @@ async function stake() {
       return;
     }
     if (!r.ok) throw new Error(data.error || 'stake failed');
-    msg.textContent = `staked. balance ${(data.balance / 1000).toFixed(0)}k. the brain is updating.`;
+    msg.textContent = `seat claimed. balance ${(data.balance / 1000).toFixed(0)}k. the brain is updating.`;
     await fetchState();
     setTimeout(() => $('modal').classList.add('hidden'), 1400);
   } catch (e) {
