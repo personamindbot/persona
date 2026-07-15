@@ -4,7 +4,7 @@
 
 **A mind owned by its holders.**
 
-PERSONA is an AI agent that lives on crypto twitter. It has no fixed personality. Its voice is assembled from the influencers its token holders choose to feed into it, weighted by how much each holder stakes. The crowd literally owns the brain.
+PERSONA is an AI agent that lives on crypto twitter. It has no fixed personality. Its voice is assembled from the influencers its token holders choose to feed into it, weighted by how much each holder holds. Tokens never leave anyone's wallet. The crowd literally owns the brain.
 
 Live map: [personamind](https://web-production-67a28.up.railway.app) · Agent: [@personamindbot](https://x.com/personamindbot)
 
@@ -14,16 +14,16 @@ Every memecoin agent out there ships with a personality someone wrote in a syste
 
 Holders connect a wallet, prove their balance and claim one of 50 seats in the brain. Each seat carries a choice: one influencer from a curated list of 100 top crypto twitter accounts, and one tone vote. The weight of that choice equals the holder balance behind it. Sell your bag and your seat dissolves. Buy more and your voice inside the mind grows.
 
-The agent then writes. Posts, replies to mentions, an internal stream of thought. All of it generated from the current weighted blend: if Ansem holds 35 percent of the brain, the agent leans into aggressive conviction calls and degen slang. If holders rotate into Cobie, the voice drifts toward dry sarcasm. The blend is recomputed on every generation, so the personality moves as fast as the stake map does.
+The agent then writes. Posts, replies to mentions, an internal stream of thought. All of it generated from the current weighted blend: if Ansem holds 35 percent of the brain, the agent leans into aggressive conviction calls and degen slang. If holders rotate into Cobie, the voice drifts toward dry sarcasm. The blend is recomputed on every generation, so the personality moves as fast as the holder map does.
 
 ## How it works
 
 ```
-holders stake → brain recomputes → agent speaks
+holders pick → brain recomputes → agent speaks
 ```
 
 1. **Seats.** The map shows all 50 seats. Taken seats display the holder and their chosen influencer. Empty seats are open to anyone above the minimum balance. Only the top 50 holders by balance shape the voice, so seats are contested.
-2. **Brain.** Influencer weight equals the sum of balances staked on them. The top slice of the brain, along with the tone vote mix, is compiled into the generation prompt.
+2. **Brain.** Influencer weight equals the sum of holder balances behind them. The top slice of the brain, along with the tone vote mix, is compiled into the generation prompt.
 3. **Speech.** A worker generates a post on a schedule, publishes the strongest ones to X, and answers mentions in the current voice. Everything the agent says or thinks is mirrored on the site: the X diary, the thought stream, and a live graph explaining which trait comes from which influencer and why.
 4. **Verification.** Balances are read straight from the chain over RPC and rechecked continuously. No balance, no seat. The map cleans itself.
 
@@ -33,9 +33,9 @@ This repo doubles as an SDK for running your own crowd built agent. Everything t
 
 **The influencer pool.** `seed.js` holds the list of 100 accounts with a curated score. Swap in any accounts you want your agent to learn from. Pick accounts whose posting actually converts: high engagement, distinct voice, loyal audience. The metrics pipeline pulls real follower counts, post counts and account age for whatever handles you seed.
 
-**The weights.** `MIN_HOLD` sets the entry ticket. `SEATS` caps how many holders mix the brain. Raise it for a wider chorus, lower it for a sharper voice. Weight is always proportional to stake, so your token distribution becomes your personality distribution.
+**The weights.** `MIN_HOLD` sets the entry ticket. `SEATS` caps how many holders mix the brain. Raise it for a wider chorus, lower it for a sharper voice. Weight is always proportional to balance, so your token distribution becomes your personality distribution.
 
-**The tones.** Four tone presets ship by default: shitpost, analyst, doomer, motivational. Holders vote with their stake and the mix tilts the delivery. Add your own presets in `server.js` and the prompt picks them up.
+**The tones.** Four tone presets ship by default: shitpost, analyst, doomer, motivational. Holders vote with their balance and the mix tilts the delivery. Add your own presets in `server.js` and the prompt picks them up.
 
 **The cadence.** `POST_INTERVAL_MS` controls how often the mind thinks, `TWEET_INTERVAL_MS` how often it speaks publicly, `MENTIONS_POLL_MS` how often it checks who is talking to it, `INSIGHTS_REFRESH_MS` how often it explains itself.
 
