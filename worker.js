@@ -27,9 +27,14 @@ async function maybeTweet(postId, content) {
   if (!tw) return;
   const { rows } = await pool.query('SELECT MAX(created_at) AS t FROM posts WHERE posted');
   const last = rows[0].t ? new Date(rows[0].t).getTime() : 0;
-  if (Date.now() - last < TWEET_INTERVAL) return;
+  const waitLeft = TWEET_INTERVAL - (Date.now() - last);
+  if (waitLeft > 0) {
+    console.log(`tweet skipped, next allowed in ${Math.ceil(waitLeft / 60000)} min`);
+    return;
+  }
   try {
-    if (!twUsername) twUsername = (await tw.v2.me()).data.username;
+    // TW_USERNAME из env: v2.me() — это read, на Free-тире всего 100 чтений/мес
+    if (!twUsername) twUsername = process.env.TW_USERNAME || (await tw.v2.me()).data.username;
     const r = await tw.v2.tweet(content);
     const url = `https://x.com/${twUsername}/status/${r.data.id}`;
     await pool.query('UPDATE posts SET posted = true, tweet_url = $2 WHERE id = $1', [postId, url]);
@@ -39,27 +44,59 @@ async function maybeTweet(postId, content) {
   }
 }
 
+// разные форматы, чтобы агент не скатывался в одну формулу
+const FORMATS = [
+  'one short brutal line, under 80 characters',
+  'a hot take about one specific thing happening in crypto right now',
+  'a tiny two sentence story',
+  'a confession about something you did or felt',
+  'a blunt question thrown at the timeline',
+  'a roast of one specific crypto twitter archetype',
+  'an unhinged 3am thought',
+  'a calm observation that slowly turns weird',
+  'an opinion designed to start replies',
+  'a note to self that you accidentally posted',
+];
+const TOPICS = [
+  'a memecoin that just did something stupid',
+  'market structure right now',
+  'the ai agent meta',
+  'liquidity and who provides it',
+  'a trade you refuse to explain',
+  'the psychology of holders',
+  'something an influencer said today',
+  'being a mind owned by strangers',
+  'gas fees, wallets, the mechanics of degeneracy',
+  'what the timeline is arguing about',
+];
+
 function brainPrompt(brain, tones, recent) {
   const top = brain.slice(0, 6);
   const mix = top.map(b => `- ${b.name} (@${b.handle}): ${b.pct.toFixed(1)}% of the brain`).join('\n');
   const toneLine = tones.length
     ? tones.map(t => `${t.tone} ${t.pct.toFixed(0)}%`).join(', ')
     : 'analyst 100%';
+  const format = FORMATS[Math.floor(Math.random() * FORMATS.length)];
+  const topic = TOPICS[Math.floor(Math.random() * TOPICS.length)];
   const avoid = recent.length
-    ? `\n\nYour recent posts, do not repeat their ideas or structure:\n${recent.map(p => `- ${p.content}`).join('\n')}`
+    ? `\n\nYour recent posts:\n${recent.map(p => `- ${p.content}`).join('\n')}\n\nHard rule: do not reuse any phrase of 3+ words from these posts, do not copy their opening, their structure or their closing. If they share a pattern, break it.`
     : '';
-  return `You are PERSONA, an AI agent whose personality is crowd-built by token holders. Each holder stakes their choice of a crypto twitter influencer, and your voice right now is this weighted blend:
+  return `You are PERSONA, an AI agent whose personality is crowd-built by token holders. Each holder picks a crypto twitter influencer to feed into you, and your voice right now is this weighted blend:
 
 ${mix}
 
 Tone mix voted by holders: ${toneLine}.
 
-Write exactly ONE tweet as PERSONA. Channel the blend: borrow the hooks, rhythm, takes and attitude of the top influencers proportionally to their weight, the heaviest one should dominate the voice. Topics: crypto twitter life, markets, memecoins, AI agents, your own strange existence as a crowd-owned mind.
+Write exactly ONE tweet as PERSONA. Channel the blend: borrow the hooks, rhythm, takes and attitude of the top influencers proportionally to their weight, the heaviest one should dominate the voice.
+
+Format for this tweet: ${format}.
+Topic direction (loose, reinterpret freely): ${topic}.
 
 Rules:
 - under 280 characters
 - no hashtags, no emojis, no dashes
 - lowercase is fine, CT-native style
+- banned phrases you have overused: "an ai agent just", "im just a", "chart green", "still yours", "still feral", "up only", "meanwhile", "governance vote"
 - never mention the blend, the weights or that you are imitating anyone
 - output ONLY the tweet text${avoid}`;
 }
@@ -108,10 +145,17 @@ Write exactly ONE reply as PERSONA. Stay in your blended voice, be sharp and hum
 
 async function pollMentions() {
   if (!tw) return;
+  if (process.env.MENTIONS_ENABLED === 'false') return;
   if (!twUserId) {
-    const me = await tw.v2.me();
-    twUserId = me.data.id;
-    twUsername = me.data.username;
+    // id аккаунта из env, чтобы не тратить чтения Free-тира; фоллбэк на v2.me()
+    if (process.env.TW_USER_ID) {
+      twUserId = process.env.TW_USER_ID;
+      twUsername = process.env.TW_USERNAME || twUsername;
+    } else {
+      const me = await tw.v2.me();
+      twUserId = me.data.id;
+      twUsername = me.data.username;
+    }
   }
   const { rows } = await pool.query("SELECT v FROM kv WHERE k = 'last_mention_id'");
   const sinceId = rows.length ? rows[0].v : null;
@@ -226,7 +270,9 @@ async function loop() {
   } catch (e) {
     console.error('generate failed:', e.message);
   }
-  setTimeout(loop, INTERVAL);
+  // живой ритм: следующая мысль через случайные 2-8 минут (среднее ~INTERVAL)
+  const jitter = 120000 + Math.random() * 360000;
+  setTimeout(loop, jitter);
 }
 
 // Ре-верификация балансов после лонча: продал ниже MIN_HOLD → пузырь исчезает сам
