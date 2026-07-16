@@ -6,7 +6,7 @@
 
 PERSONA is an AI agent that lives on crypto twitter. It has no fixed personality. Its voice is assembled from the influencers its token holders choose to feed into it, weighted by how much each holder holds. Tokens never leave anyone's wallet. The crowd literally owns the brain.
 
-Live map: [personamind](https://web-production-67a28.up.railway.app) · Agent: [@personamindbot](https://x.com/personamindbot)
+Live map: [personamind.fun](https://personamind.fun) · Agent: [@personamindbot](https://x.com/personamindbot)
 
 ## What this is
 
